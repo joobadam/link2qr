@@ -1,12 +1,26 @@
+'use client'
+
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Ripple from "./magicui/ripple"
+import { useEffect } from 'react'
+import { useAnimate } from 'framer-motion'
 
 export default function Hero() {
+  const [scope, animate] = useAnimate()
+
+  useEffect(() => {
+    animate(scope.current, { opacity: 1, y: 0 }, { duration: 0.5 })
+  }, [animate, scope])
+
   return (
     <section className="flex-center container1">
       <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center space-y-4 text-center">
+        <div 
+          ref={scope}
+          style={{ opacity: 0, transform: 'translateY(-20px)' }}
+          className="flex flex-col items-center space-y-4 text-center"
+        >
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
               Generate unique <span className="text-yellow-500">QR</span> codes in seconds

@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/card"
 import { Check, Zap } from "lucide-react"
 import Link from "next/link"
+import { loadStripe } from '@stripe/stripe-js/pure';
+
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false)
@@ -23,7 +27,8 @@ export default function Pricing() {
       features: ["100 QR codes/month", "Basic customization", "Email support"],
       description: "Perfect for individuals and small projects.",
       cta: "Get Started",
-      highlight: false
+      highlight: false,
+      priceId: { monthly: null, annual: null }
     },
     { 
       name: "Pro", 
@@ -31,7 +36,11 @@ export default function Pricing() {
       features: ["Unlimited QR codes", "Advanced customization", "Priority support", "Analytics dashboard", "Custom branding"],
       description: "Ideal for growing businesses and professionals.",
       cta: "Upgrade to Pro",
-      highlight: true
+      highlight: true,
+      priceId: { 
+        monthly: "price_1Q1n2ZDE2Ud9UganL9hnMR4X", 
+        annual: "price_1Q1n48DE2Ud9Ugan7UGOnScZ"  
+      }
     },
     { 
       name: "Enterprise", 
@@ -39,9 +48,42 @@ export default function Pricing() {
       features: ["Custom solutions", "API access", "Dedicated account manager", "24/7 phone support", "Service Level Agreement (SLA)"],
       description: "Tailored solutions for large organizations.",
       cta: "Contact Sales",
-      highlight: false
+      highlight: false,
+      priceId: { monthly: null, annual: null }
     },
   ]
+
+  const handleCheckout = async (priceId: string | null, mode: 'payment' | 'subscription') => {
+    if (!priceId) return;
+
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ priceId, mode: 'subscription' }), 
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const { sessionId } = await response.json();
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Stripe has not been initialized');
+      }
+
+      const result = await stripe.redirectToCheckout({ sessionId });
+
+      if (result.error) {
+        console.error(result.error.message);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   return (
     <section className="py-20" id="pricing">
@@ -91,7 +133,14 @@ export default function Pricing() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className={`w-full ${plan.highlight ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}>
+                <Button 
+                  className={`w-full ${plan.highlight ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
+                  onClick={() => handleCheckout(
+                    isAnnual ? plan.priceId.annual : plan.priceId.monthly,
+                    'subscription' 
+                  )}
+                  disabled={!plan.priceId.monthly && !plan.priceId.annual}
+                >
                   {plan.cta}
                   {plan.highlight && <Zap className="ml-2 h-4 w-4" />}
                 </Button>

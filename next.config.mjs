@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    transpilePackages: ['framer-motion'],
     webpack(config) {
         config.module.rules.push({
           test: /\.svg$/,
@@ -8,16 +9,7 @@ const nextConfig = {
         return config;
       },
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'unsplash.com',
-      },
-    ],
+    domains: ['images.unsplash.com', 'stripe.com'],
   },
 };
 
